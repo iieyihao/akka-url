@@ -14,25 +14,38 @@ public class WorkerActor extends AbstractActor {
     return Props.create(WorkerActor.class, () -> new WorkerActor());
   }
 
-  public WorkerActor() {
+  public static class Result{
+    private URL url;
+    private int bytes;
+    public Result(URL url,int bytes) {
+      this.url = url;
+      this.bytes = bytes;
+    }
+    public URL getUrl() {
+      return url;
+    }
+
+    public int getBytes() {
+      return bytes;
+    }
   }
 
   @Override
   public Receive createReceive() {
     return receiveBuilder()
-        .match(String.class, url -> {
+        .match(URL.class, url -> {
             int bytes = doWork(url);
+            Result res = new Result(url,bytes);
             //tell the result to
-            getContext().getParent().tell(url+":" +bytes,ActorRef.noSender());
+            getContext().getParent().tell(res,ActorRef.noSender());
             getContext().stop(getSelf());
         })
         .build();
   }
 
-  private int doWork(String urls) {
+  private int doWork(URL url) {
     int bytes = 0;
     try {
-      URL url = new URL(urls);
       InputStream in =url.openStream();
       while (in.available()!=0) {
         //read a byte
